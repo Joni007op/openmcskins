@@ -23,17 +23,6 @@ header {
     margin: 20px auto;
     padding: 0 10px;
 }
-.search-bar {
-    margin-bottom: 20px;
-    text-align: center;
-}
-.search-bar input {
-    width: 50%;
-    padding: 10px;
-    font-size: 1em;
-    border-radius: 5px;
-    border: none;
-}
 .upload-section {
     display: flex;
     flex-direction: column;
@@ -47,21 +36,18 @@ header {
     background-color: #2a2a2a;
     border-radius: 10px;
     display: flex;
-    flex-direction: column;
     justify-content: center;
     align-items: center;
     cursor: pointer;
     margin-bottom: 10px;
     transition: background 0.2s, border-color 0.2s;
+    color: #ccc;
+    font-weight: bold;
+    text-align: center;
 }
 .drop-zone.dragover {
     background-color: #444;
     border-color: #0ff;
-}
-.drop-text {
-    font-weight: bold;
-    color: #ccc;
-    text-align: center;
 }
 .upload-row {
     display: flex;
@@ -126,13 +112,9 @@ footer {
 <header>OpenMC-Skins</header>
 
 <div class="container">
-    <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="Nach Skins suchen...">
-    </div>
-
     <div class="upload-section">
         <div id="dropZone" class="drop-zone">
-            <div class="drop-text">Drag and Drop oder Datei zum Auswählen</div>
+            Drag and Drop oder Datei zum Auswählen
         </div>
         <input type="file" id="fileInput" accept=".png" style="display:none;">
         <div class="upload-row">
@@ -140,7 +122,6 @@ footer {
             <button id="uploadBtn">Upload</button>
         </div>
     </div>
-
     <div class="gallery" id="gallery"></div>
 </div>
 
@@ -149,20 +130,20 @@ Diese Seite ist ein Fan-Projekt und steht in keiner offiziellen Verbindung zu Mo
 Minecraft und Skins sind geistiges Eigentum von Mojang/Microsoft.
 </footer>
 
-<!-- Cloudinary Upload -->
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
-const cloudName = "DBFY3KJGB"; // DEIN Cloud Name
-const uploadPreset = "OOpenMC-Skin"; // DEIN Unsigned Upload Preset
+const cloudName = "dbfy3kjgb"; // dein Cloudinary Cloud Name
+const uploadPreset = "OpenMC-Skin"; // dein Unsigned Upload Preset
 
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
 const uploadBtn = document.getElementById('uploadBtn');
 const skinNameInput = document.getElementById('skinName');
 const gallery = document.getElementById('gallery');
-const searchInput = document.getElementById('searchInput');
 
-// Klick auf DropZone öffnet Datei-Dialog
+let uploadedSkins = []; // lokal gespeicherte hochgeladene Skins
+
+// Klick öffnet Datei-Dialog
 dropZone.addEventListener('click', () => fileInput.click());
 
 // Drag & Drop
@@ -182,61 +163,65 @@ dropZone.addEventListener('drop', e => {
     }
 });
 
-// Upload-Button
+// Upload
 uploadBtn.addEventListener('click', async () => {
     const file = fileInput.files[0];
     const name = skinNameInput.value.trim() || (file ? file.name : '');
-    if (!file) return alert('Keine Datei ausgewählt');
-    if (!name) return alert('Gib einen Namen ein');
+    if(!file) return alert("Keine Datei ausgewählt!");
+    if(!name) return alert("Bitte einen Namen eingeben!");
+    // Nur PNG-Dateien akzeptieren
+    if(file.type !== "image/png") return alert("Nur PNG-Dateien erlaubt!");
+    // Optional: Prüfen der Abmessungen 64x64
+    const img = new Image();
+    img.onload = async () => {
+        if(img.width !== 64 || img.height !== 64) {
+            alert("Skin muss 64x64 Pixel groß sein!");
+            return;
+        }
+        await uploadToCloudinary(file, name);
+    }
+    img.src = URL.createObjectURL(file);
+});
 
+// Funktion: Upload zu Cloudinary
+async function uploadToCloudinary(file, name) {
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', uploadPreset);
-    formData.append('public_id', name);
+    formData.append("file", file);
+    formData.append("upload_preset", uploadPreset);
+    formData.append("public_id", name);
 
     try {
         const res = await axios.post(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, formData);
-        alert('Skin hochgeladen!');
+        alert("Skin hochgeladen!");
         fileInput.value = '';
         skinNameInput.value = '';
-        loadGallery();
+        addToGallery(res.data.secure_url, name);
     } catch(err) {
         console.error(err);
-        alert('Upload fehlgeschlagen');
-    }
-});
-
-// Galerie laden
-async function loadGallery() {
-    gallery.innerHTML = '';
-    try {
-        // Hole alle Skins aus Cloudinary - hier muss ein JSON-Paket auf Cloudinary existieren
-        const res = await axios.get(`https://res.cloudinary.com/${cloudName}/image/list/openmc_skins.json`);
-        const images = res.data.resources || [];
-        images.forEach(img => {
-            const card = document.createElement('div');
-            card.className = 'skin-card';
-            const image = document.createElement('img');
-            image.src = img.secure_url;
-            card.appendChild(image);
-
-            const title = document.createElement('div');
-            title.textContent = img.public_id;
-            card.appendChild(title);
-
-            const downloadBtn = document.createElement('button');
-            downloadBtn.textContent = 'Download';
-            downloadBtn.onclick = () => window.open(img.secure_url, '_blank');
-            card.appendChild(downloadBtn);
-
-            gallery.appendChild(card);
-        });
-    } catch(err) {
-        console.warn('Galerie konnte nicht geladen werden:', err);
+        alert("Upload fehlgeschlagen!");
     }
 }
 
-loadGallery();
+// Galerie direkt aktualisieren
+function addToGallery(url, name) {
+    const card = document.createElement('div');
+    card.className = 'skin-card';
+    const img = document.createElement('img');
+    img.src = url;
+    card.appendChild(img);
+
+    const title = document.createElement('div');
+    title.textContent = name;
+    card.appendChild(title);
+
+    const downloadBtn = document.createElement('button');
+    downloadBtn.textContent = "Download";
+    downloadBtn.onclick = () => window.open(url, "_blank");
+    card.appendChild(downloadBtn);
+
+    gallery.appendChild(card);
+    uploadedSkins.push({url, name});
+}
 </script>
 </body>
 </html>
