@@ -40,29 +40,62 @@
         }
 
         .upload-section {
-            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             margin-bottom: 20px;
         }
 
-        .upload-section input[type="file"] {
-            display: none;
-        }
-
-        .upload-label {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: #0ff;
-            color: #121212;
-            font-weight: bold;
-            border-radius: 5px;
+        .drop-zone {
+            width: 300px;
+            height: 120px;
+            border: 2px dashed #0ff;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             cursor: pointer;
             margin-bottom: 10px;
+            transition: background 0.2s;
         }
 
-        .upload-name {
-            display: block;
+        .drop-zone.dragover {
+            background-color: rgba(0, 255, 255, 0.2);
+        }
+
+        .drop-icon {
+            font-size: 2em;
+        }
+
+        .drop-text {
             margin-top: 5px;
+            text-align: center;
+            font-weight: bold;
+            color: #0ff;
+        }
+
+        .upload-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .upload-row input[type="text"] {
+            padding: 10px;
+            font-size: 1em;
+            border-radius: 5px;
+            border: none;
+        }
+
+        .upload-row button {
+            padding: 10px 20px;
+            background-color: #f0f;
+            border: none;
+            border-radius: 5px;
             color: #fff;
+            font-weight: bold;
+            cursor: pointer;
         }
 
         .gallery {
@@ -117,9 +150,15 @@
     </div>
 
     <div class="upload-section">
-        <label class="upload-label" for="fileInput">Skin hochladen</label>
-        <input type="file" id="fileInput" accept=".png">
-        <input type="text" id="skinName" placeholder="Name des Skins">
+        <div id="dropZone" class="drop-zone">
+            <div class="drop-icon">⬆️</div>
+            <div class="drop-text">Ziehe deinen Skin hierher oder klicke zum Auswählen</div>
+            <input type="file" id="fileInput" accept=".png">
+        </div>
+        <div class="upload-row">
+            <input type="text" id="skinName" placeholder="Name des Skins">
+            <button id="uploadBtn">Upload</button>
+        </div>
     </div>
 
     <div class="gallery" id="gallery"></div>
@@ -146,20 +185,43 @@
         appId: "1:97231924615:web:6271d12ce917699f68f722"
     };
 
-    // Firebase initialisieren (v9 compat, funktioniert wie v8)
     firebase.initializeApp(firebaseConfig);
     const storage = firebase.storage();
 
+    const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
+    const uploadBtn = document.getElementById('uploadBtn');
     const skinNameInput = document.getElementById('skinName');
     const gallery = document.getElementById('gallery');
     const searchInput = document.getElementById('searchInput');
 
-    // Upload-Funktion
-    fileInput.addEventListener('change', () => {
+    // DropZone click öffnet Datei
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    // Drag & Drop
+    dropZone.addEventListener('dragover', e => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', e => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file) fileInput.files = e.dataTransfer.files;
+    });
+
+    // Upload-Button
+    uploadBtn.addEventListener('click', () => {
         const file = fileInput.files[0];
-        const name = skinNameInput.value.trim() || file.name;
+        const name = skinNameInput.value.trim() || (file ? file.name : '');
         if (!file) return alert('Keine Datei ausgewählt');
+        if (!name) return alert('Gib einen Namen ein');
 
         const storageRef = storage.ref('skins/' + name);
         const uploadTask = storageRef.put(file);
@@ -218,7 +280,6 @@
         });
     });
 
-    // Galerie initial laden
     loadGallery();
 </script>
 
