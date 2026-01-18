@@ -17,9 +17,9 @@ header {background:linear-gradient(90deg,#0ff,#f0f); padding:20px; text-align:ce
 .upload-row button {background:linear-gradient(90deg,#0ff,#f0f); color:#121212; font-weight:bold; border-radius:5px; padding:10px 20px; cursor:pointer;}
 .gallery {display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:15px;}
 .skin-card {background:#1a1a1a; padding:10px; border-radius:10px; text-align:center;}
-.skin-card canvas {width:120px; height:120px; border-radius:5px;}
+.skin-card img {width:120px; height:120px; border-radius:5px; object-fit:contain;}
 .skin-card button {margin-top:5px; padding:5px 10px; background:#f0f; border:none; border-radius:5px; color:#fff; font-weight:bold; cursor:pointer;}
-footer {text-align:center; margin:40px 0 20px; font-size:0.8em; color:#888;}
+footer {text-align:center; margin:40px 0 20px 0; font-size:0.8em; color:#888;}
 </style>
 </head>
 <body>
@@ -43,12 +43,12 @@ footer {text-align:center; margin:40px 0 20px; font-size:0.8em; color:#888;}
 <footer>Diese Seite ist ein Fan-Projekt und steht in keiner offiziellen Verbindung zu Mojang/Microsoft.<br>Minecraft und Skins sind geistiges Eigentum von Mojang/Microsoft.</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-<script src="https://unpkg.com/skinview3d@0.15.3/dist/skinview3d.min.js"></script>
 <script>
 const SUPABASE_URL = 'https://iomomoktrjlhqoeoavkb.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_q1BzzFtE0bFieXJtPD6Sng_lZQXC740';
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const BUCKET = 'skins';
+
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
@@ -57,7 +57,7 @@ const skinNameInput = document.getElementById('skinName');
 const gallery = document.getElementById('gallery');
 
 // Drag & Drop + Klick
-dropZone.addEventListener('click', ()=>fileInput.click());
+dropZone.addEventListener('click', () => fileInput.click());
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
 dropZone.addEventListener('dragleave', e => { e.preventDefault(); dropZone.classList.remove('dragover'); });
 dropZone.addEventListener('drop', e => {
@@ -94,13 +94,9 @@ async function loadGallery(){
         const card = document.createElement('div');
         card.className = 'skin-card';
 
-        const viewer = new skinview3d.SkinViewer({
-            width:120,
-            height:120,
-            canvas: document.createElement('canvas')
-        });
-        viewer.loadSkin(publicURL);
-        card.appendChild(viewer.canvas);
+        const img = document.createElement('img');
+        img.src = publicURL;
+        card.appendChild(img);
 
         const title = document.createElement('div');
         title.textContent = file.name;
