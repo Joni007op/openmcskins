@@ -5,103 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OpenMC-Skins</title>
 <style>
-body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background-color: #121212;
-    color: #fff;
-}
-header {
-    background: linear-gradient(90deg, #0ff, #f0f);
-    padding: 20px;
-    text-align: center;
-    font-size: 2em;
-    font-weight: bold;
-}
-.container {
-    max-width: 1000px;
-    margin: 20px auto;
-    padding: 0 10px;
-}
-.upload-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-bottom: 20px;
-}
-.drop-zone {
-    width: 300px;
-    height: 120px;
-    border: 2px dashed #555;
-    background-color: #2a2a2a;
-    border-radius: 10px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    margin-bottom: 10px;
-    transition: background 0.2s, border-color 0.2s;
-}
-.drop-zone.dragover {
-    background-color: #444;
-    border-color: #0ff;
-}
-.drop-text {
-    font-weight: bold;
-    color: #ccc;
-    text-align: center;
-}
-.upload-row {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-.upload-row input[type="text"] {
-    padding: 10px;
-    font-size: 1em;
-    border-radius: 5px;
-    border: none;
-}
-.upload-row button {
-    background: linear-gradient(90deg, #0ff, #f0f);
-    color: #121212;
-    font-weight: bold;
-    border-radius: 5px;
-    padding: 10px 20px;
-    cursor: pointer;
-}
-.gallery {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 15px;
-}
-.skin-card {
-    background-color: #1a1a1a;
-    padding: 10px;
-    border-radius: 10px;
-    text-align: center;
-}
-.skin-card canvas {
-    width: 120px;
-    height: 120px;
-    border-radius: 5px;
-}
-.skin-card button {
-    margin-top: 5px;
-    padding: 5px 10px;
-    background-color: #f0f;
-    border: none;
-    border-radius: 5px;
-    color: #fff;
-    font-weight: bold;
-    cursor: pointer;
-}
-footer {
-    text-align: center;
-    margin: 40px 0 20px 0;
-    font-size: 0.8em;
-    color: #888;
-}
+body {margin:0; font-family:Arial,sans-serif; background:#121212; color:#fff;}
+header {background:linear-gradient(90deg,#0ff,#f0f); padding:20px; text-align:center; font-size:2em; font-weight:bold;}
+.container {max-width:1000px; margin:20px auto; padding:0 10px;}
+.upload-section {display:flex; flex-direction:column; align-items:center; margin-bottom:20px;}
+.drop-zone {width:300px; height:120px; border:2px dashed #555; background:#2a2a2a; border-radius:10px; display:flex; justify-content:center; align-items:center; cursor:pointer; margin-bottom:10px; transition:0.2s;}
+.drop-zone.dragover {background:#444; border-color:#0ff;}
+.drop-text {font-weight:bold; color:#ccc; text-align:center;}
+.upload-row {display:flex; gap:10px; align-items:center;}
+.upload-row input[type="text"] {padding:10px; font-size:1em; border-radius:5px; border:none;}
+.upload-row button {background:linear-gradient(90deg,#0ff,#f0f); color:#121212; font-weight:bold; border-radius:5px; padding:10px 20px; cursor:pointer;}
+.gallery {display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:15px;}
+.skin-card {background:#1a1a1a; padding:10px; border-radius:10px; text-align:center;}
+.skin-card canvas {width:120px; height:120px; border-radius:5px;}
+.skin-card button {margin-top:5px; padding:5px 10px; background:#f0f; border:none; border-radius:5px; color:#fff; font-weight:bold; cursor:pointer;}
+footer {text-align:center; margin:40px 0 20px; font-size:0.8em; color:#888;}
 </style>
 </head>
 <body>
@@ -119,85 +37,66 @@ footer {
             <button id="uploadBtn">Upload</button>
         </div>
     </div>
-
     <div class="gallery" id="gallery"></div>
 </div>
 
-<footer>
-Diese Seite ist ein Fan-Projekt und steht in keiner offiziellen Verbindung zu Mojang/Microsoft.<br>
-Minecraft und Skins sind geistiges Eigentum von Mojang/Microsoft.
-</footer>
+<footer>Diese Seite ist ein Fan-Projekt und steht in keiner offiziellen Verbindung zu Mojang/Microsoft.<br>Minecraft und Skins sind geistiges Eigentum von Mojang/Microsoft.</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script src="https://unpkg.com/skinview3d@0.15.3/dist/skinview3d.min.js"></script>
 <script>
-// --- Supabase Setup ---
 const SUPABASE_URL = 'https://iomomoktrjlhqoeoavkb.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_q1BzzFtE0bFieXJtPD6Sng_lZQXC740';
 const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const BUCKET = 'skins';
 
-// --- Elemente ---
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
 const uploadBtn = document.getElementById('uploadBtn');
 const skinNameInput = document.getElementById('skinName');
 const gallery = document.getElementById('gallery');
 
-// --- Drag & Drop ---
-dropZone.addEventListener('click', () => fileInput.click());
-dropZone.addEventListener('dragover', e => {
-    e.preventDefault();
-    dropZone.classList.add('dragover');
-});
-dropZone.addEventListener('dragleave', e => {
-    e.preventDefault();
-    dropZone.classList.remove('dragover');
-});
+// Drag & Drop + Klick
+dropZone.addEventListener('click', ()=>fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', e => { e.preventDefault(); dropZone.classList.remove('dragover'); });
 dropZone.addEventListener('drop', e => {
     e.preventDefault();
     dropZone.classList.remove('dragover');
     if(e.dataTransfer.files.length > 0) fileInput.files = e.dataTransfer.files;
 });
 
-// --- Upload ---
+// Upload Funktion
 uploadBtn.addEventListener('click', async () => {
     const file = fileInput.files[0];
     const name = skinNameInput.value.trim() || (file ? file.name : '');
     if(!file) return alert('Keine Datei ausgewählt');
     if(!name) return alert('Gib einen Namen ein');
 
-    const { data, error } = await supabase.storage.from(BUCKET).upload(name, file, { upsert: true });
-    if(error) {
-        console.error(error);
-        return alert('Upload fehlgeschlagen: ' + error.message);
-    }
+    const { data, error } = await supabase.storage.from(BUCKET).upload(name, file, { upsert:true });
+    if(error){ console.error(error); return alert('Upload fehlgeschlagen: '+error.message); }
 
-    fileInput.value = '';
-    skinNameInput.value = '';
+    fileInput.value='';
+    skinNameInput.value='';
     loadGallery();
 });
 
-// --- Galerie laden ---
-async function loadGallery() {
-    gallery.innerHTML = '';
+// Galerie laden
+async function loadGallery(){
+    gallery.innerHTML='';
     const { data, error } = await supabase.storage.from(BUCKET).list();
-    if(error) {
-        console.error(error);
-        return;
-    }
+    if(error){ console.error(error); return; }
 
-    for(const file of data) {
+    for(const file of data){
         const { publicURL, error: urlError } = supabase.storage.from(BUCKET).getPublicUrl(file.name);
         if(urlError) continue;
 
         const card = document.createElement('div');
         card.className = 'skin-card';
 
-        // 3D Skin-Viewer
         const viewer = new skinview3d.SkinViewer({
-            width: 120,
-            height: 120,
+            width:120,
+            height:120,
             canvas: document.createElement('canvas')
         });
         viewer.loadSkin(publicURL);
@@ -208,16 +107,17 @@ async function loadGallery() {
         card.appendChild(title);
 
         const downloadBtn = document.createElement('button');
-        downloadBtn.textContent = 'Download';
-        downloadBtn.onclick = () => window.open(publicURL, '_blank');
+        downloadBtn.textContent='Download';
+        downloadBtn.onclick=()=>window.open(publicURL,'_blank');
         card.appendChild(downloadBtn);
 
         gallery.appendChild(card);
     }
 }
 
-// --- Galerie sofort laden ---
+// Lade Galerie beim Start
 loadGallery();
 </script>
+
 </body>
 </html>
