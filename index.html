@@ -133,8 +133,8 @@ footer {
     <div class="upload-section">
         <div id="dropZone" class="drop-zone">
             <div class="drop-text">Drag and Drop oder Datei zum Auswählen</div>
-            <input type="file" id="fileInput" accept=".png" style="display:none;">
         </div>
+        <input type="file" id="fileInput" accept=".png" style="display:none;">
         <div class="upload-row">
             <input type="text" id="skinName" placeholder="Name des Skins">
             <button id="uploadBtn">Upload</button>
@@ -162,17 +162,24 @@ const skinNameInput = document.getElementById('skinName');
 const gallery = document.getElementById('gallery');
 const searchInput = document.getElementById('searchInput');
 
-// DropZone click öffnet Datei
+// Klick auf DropZone öffnet Datei-Dialog
 dropZone.addEventListener('click', () => fileInput.click());
 
 // Drag & Drop
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-dropZone.addEventListener('dragleave', e => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+dropZone.addEventListener('dragover', e => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+});
+dropZone.addEventListener('dragleave', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+});
 dropZone.addEventListener('drop', e => {
     e.preventDefault();
     dropZone.classList.remove('dragover');
-    const file = e.dataTransfer.files[0];
-    if (file) fileInput.files = e.dataTransfer.files;
+    if(e.dataTransfer.files.length > 0) {
+        fileInput.files = e.dataTransfer.files;
+    }
 });
 
 // Upload-Button
@@ -203,6 +210,7 @@ uploadBtn.addEventListener('click', async () => {
 async function loadGallery() {
     gallery.innerHTML = '';
     try {
+        // Hole alle Skins aus Cloudinary - hier muss ein JSON-Paket auf Cloudinary existieren
         const res = await axios.get(`https://res.cloudinary.com/${cloudName}/image/list/openmc_skins.json`);
         const images = res.data.resources || [];
         images.forEach(img => {
