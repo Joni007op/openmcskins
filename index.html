@@ -111,7 +111,7 @@ footer {
 <div class="container">
     <div class="upload-section">
         <div id="dropZone" class="drop-zone">
-            <div class="drop-text">Drag and Drop oder Datei zum Auswählen</div>
+            <div class="drop-text">Drag & Drop oder hier klicken</div>
         </div>
         <input type="file" id="fileInput" accept=".png" style="display:none;">
         <div class="upload-row">
@@ -128,35 +128,39 @@ Diese Seite ist ein Fan-Projekt und steht in keiner offiziellen Verbindung zu Mo
 Minecraft und Skins sind geistiges Eigentum von Mojang/Microsoft.
 </footer>
 
-<!-- Bibliotheken -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script src="https://unpkg.com/skinview3d@0.15.3/dist/skinview3d.min.js"></script>
-
 <script>
-// Supabase Setup
+// --- Supabase Setup ---
 const SUPABASE_URL = 'https://iomomoktrjlhqoeoavkb.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_q1BzzFtE0bFieXJtPD6Sng_lZQXC740';
 const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const BUCKET = 'skins';
 
-// Elemente
+// --- Elemente ---
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
 const uploadBtn = document.getElementById('uploadBtn');
 const skinNameInput = document.getElementById('skinName');
 const gallery = document.getElementById('gallery');
 
-// Drag & Drop
+// --- Drag & Drop ---
 dropZone.addEventListener('click', () => fileInput.click());
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-dropZone.addEventListener('dragleave', e => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+dropZone.addEventListener('dragover', e => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+});
+dropZone.addEventListener('dragleave', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+});
 dropZone.addEventListener('drop', e => {
     e.preventDefault();
     dropZone.classList.remove('dragover');
     if(e.dataTransfer.files.length > 0) fileInput.files = e.dataTransfer.files;
 });
 
-// Upload
+// --- Upload ---
 uploadBtn.addEventListener('click', async () => {
     const file = fileInput.files[0];
     const name = skinNameInput.value.trim() || (file ? file.name : '');
@@ -166,7 +170,7 @@ uploadBtn.addEventListener('click', async () => {
     const { data, error } = await supabase.storage.from(BUCKET).upload(name, file, { upsert: true });
     if(error) {
         console.error(error);
-        return alert('Upload fehlgeschlagen');
+        return alert('Upload fehlgeschlagen: ' + error.message);
     }
 
     fileInput.value = '';
@@ -174,7 +178,7 @@ uploadBtn.addEventListener('click', async () => {
     loadGallery();
 });
 
-// Galerie laden
+// --- Galerie laden ---
 async function loadGallery() {
     gallery.innerHTML = '';
     const { data, error } = await supabase.storage.from(BUCKET).list();
@@ -190,6 +194,7 @@ async function loadGallery() {
         const card = document.createElement('div');
         card.className = 'skin-card';
 
+        // 3D Skin-Viewer
         const viewer = new skinview3d.SkinViewer({
             width: 120,
             height: 120,
@@ -211,7 +216,7 @@ async function loadGallery() {
     }
 }
 
-// Direkt beim Laden
+// --- Galerie sofort laden ---
 loadGallery();
 </script>
 </body>
