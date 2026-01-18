@@ -129,13 +129,17 @@ Minecraft und Skins sind geistiges Eigentum von Mojang/Microsoft.
 </footer>
 
 <!-- Bibliotheken -->
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script src="https://unpkg.com/skinview3d@0.15.3/dist/skinview3d.min.js"></script>
 
 <script>
-const cloudName = "DBFY3KJGB"; // DEIN Cloud Name
-const uploadPreset = "OpenMC-Skin"; // DEIN Unsigned Upload Preset
+// Supabase Setup
+const SUPABASE_URL = 'https://iomomoktrjlhqoeoavkb.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_q1BzzFtE0bFieXJtPD6Sng_lZQXC740';
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const BUCKET = 'skins';
 
+// Elemente
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
 const uploadBtn = document.getElementById('uploadBtn');
@@ -159,60 +163,55 @@ uploadBtn.addEventListener('click', async () => {
     if(!file) return alert('Keine Datei ausgewählt');
     if(!name) return alert('Gib einen Namen ein');
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', uploadPreset);
-    formData.append('public_id', name);
-    formData.append('tags', 'openmc_skins'); // Tag für öffentliche Galerie
-
-    try {
-        await axios.post(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, formData);
-        fileInput.value = '';
-        skinNameInput.value = '';
-        loadGallery();
-    } catch(err) {
-        console.error(err);
-        alert('Upload fehlgeschlagen');
+    const { data, error } = await supabase.storage.from(BUCKET).upload(name, file, { upsert: true });
+    if(error) {
+        console.error(error);
+        return alert('Upload fehlgeschlagen');
     }
+
+    fileInput.value = '';
+    skinNameInput.value = '';
+    loadGallery();
 });
 
 // Galerie laden
 async function loadGallery() {
     gallery.innerHTML = '';
-    try {
-        // Alle Skins mit Tag 'openmc_skins' abrufen
-        const res = await axios.get(`https://res.cloudinary.com/${cloudName}/image/list/openmc_skins.json`);
-        const skins = res.data.resources || [];
-        skins.forEach(skin => {
-            const card = document.createElement('div');
-            card.className = 'skin-card';
+    const { data, error } = await supabase.storage.from(BUCKET).list();
+    if(error) {
+        console.error(error);
+        return;
+    }
 
-            // Skin in 3D anzeigen
-            const viewer = new skinview3d.SkinViewer({
-                width: 120,
-                height: 120,
-                canvas: document.createElement('canvas')
-            });
-            viewer.loadSkin(`https://res.cloudinary.com/${cloudName}/image/upload/${skin.public_id}.png`);
-            card.appendChild(viewer.canvas);
+    for(const file of data) {
+        const { publicURL, error: urlError } = supabase.storage.from(BUCKET).getPublicUrl(file.name);
+        if(urlError) continue;
 
-            const title = document.createElement('div');
-            title.textContent = skin.public_id;
-            card.appendChild(title);
+        const card = document.createElement('div');
+        card.className = 'skin-card';
 
-            const downloadBtn = document.createElement('button');
-            downloadBtn.textContent = 'Download';
-            downloadBtn.onclick = () => window.open(`https://res.cloudinary.com/${cloudName}/image/upload/${skin.public_id}.png`, '_blank');
-            card.appendChild(downloadBtn);
-
-            gallery.appendChild(card);
+        const viewer = new skinview3d.SkinViewer({
+            width: 120,
+            height: 120,
+            canvas: document.createElement('canvas')
         });
-    } catch(err) {
-        console.warn('Galerie konnte nicht geladen werden:', err);
+        viewer.loadSkin(publicURL);
+        card.appendChild(viewer.canvas);
+
+        const title = document.createElement('div');
+        title.textContent = file.name;
+        card.appendChild(title);
+
+        const downloadBtn = document.createElement('button');
+        downloadBtn.textContent = 'Download';
+        downloadBtn.onclick = () => window.open(publicURL, '_blank');
+        card.appendChild(downloadBtn);
+
+        gallery.appendChild(card);
     }
 }
 
-// Galerie direkt laden
+// Direkt beim Laden
 loadGallery();
 </script>
 </body>
