@@ -41,13 +41,15 @@ header {
     cursor: pointer;
     margin-bottom: 10px;
     transition: background 0.2s, border-color 0.2s;
-    color: #ccc;
-    font-weight: bold;
-    text-align: center;
 }
 .drop-zone.dragover {
     background-color: #444;
     border-color: #0ff;
+}
+.drop-text {
+    font-weight: bold;
+    color: #ccc;
+    text-align: center;
 }
 .upload-row {
     display: flex;
@@ -67,14 +69,10 @@ header {
     border-radius: 5px;
     padding: 10px 20px;
     cursor: pointer;
-    transition: transform 0.1s;
-}
-.upload-row button:hover {
-    transform: scale(1.05);
 }
 .gallery {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 15px;
 }
 .skin-card {
@@ -83,10 +81,9 @@ header {
     border-radius: 10px;
     text-align: center;
 }
-.skin-card img {
-    width: 100px;
-    height: 100px;
-    image-rendering: pixelated;
+.skin-card canvas {
+    width: 120px;
+    height: 120px;
     border-radius: 5px;
 }
 .skin-card button {
@@ -114,7 +111,7 @@ footer {
 <div class="container">
     <div class="upload-section">
         <div id="dropZone" class="drop-zone">
-            Drag and Drop oder Datei zum Auswählen
+            <div class="drop-text">Drag and Drop oder Datei zum Auswählen</div>
         </div>
         <input type="file" id="fileInput" accept=".png" style="display:none;">
         <div class="upload-row">
@@ -122,6 +119,7 @@ footer {
             <button id="uploadBtn">Upload</button>
         </div>
     </div>
+
     <div class="gallery" id="gallery"></div>
 </div>
 
@@ -130,10 +128,13 @@ Diese Seite ist ein Fan-Projekt und steht in keiner offiziellen Verbindung zu Mo
 Minecraft und Skins sind geistiges Eigentum von Mojang/Microsoft.
 </footer>
 
+<!-- Bibliotheken -->
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://unpkg.com/skinview3d@0.15.3/dist/skinview3d.min.js"></script>
+
 <script>
-const cloudName = "dbfy3kjgb"; // dein Cloudinary Cloud Name
-const uploadPreset = "OpenMC-Skin"; // dein Unsigned Upload Preset
+const cloudName = "DBFY3KJGB"; // DEIN Cloud Name
+const uploadPreset = "OpenMC-Skin"; // DEIN Unsigned Upload Preset
 
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
@@ -141,87 +142,78 @@ const uploadBtn = document.getElementById('uploadBtn');
 const skinNameInput = document.getElementById('skinName');
 const gallery = document.getElementById('gallery');
 
-let uploadedSkins = []; // lokal gespeicherte hochgeladene Skins
-
-// Klick öffnet Datei-Dialog
-dropZone.addEventListener('click', () => fileInput.click());
-
 // Drag & Drop
-dropZone.addEventListener('dragover', e => {
-    e.preventDefault();
-    dropZone.classList.add('dragover');
-});
-dropZone.addEventListener('dragleave', e => {
-    e.preventDefault();
-    dropZone.classList.remove('dragover');
-});
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', e => { e.preventDefault(); dropZone.classList.remove('dragover'); });
 dropZone.addEventListener('drop', e => {
     e.preventDefault();
     dropZone.classList.remove('dragover');
-    if(e.dataTransfer.files.length > 0) {
-        fileInput.files = e.dataTransfer.files;
-    }
+    if(e.dataTransfer.files.length > 0) fileInput.files = e.dataTransfer.files;
 });
 
 // Upload
 uploadBtn.addEventListener('click', async () => {
     const file = fileInput.files[0];
     const name = skinNameInput.value.trim() || (file ? file.name : '');
-    if(!file) return alert("Keine Datei ausgewählt!");
-    if(!name) return alert("Bitte einen Namen eingeben!");
-    // Nur PNG-Dateien akzeptieren
-    if(file.type !== "image/png") return alert("Nur PNG-Dateien erlaubt!");
-    // Optional: Prüfen der Abmessungen 64x64
-    const img = new Image();
-    img.onload = async () => {
-        if(img.width !== 64 || img.height !== 64) {
-            alert("Skin muss 64x64 Pixel groß sein!");
-            return;
-        }
-        await uploadToCloudinary(file, name);
-    }
-    img.src = URL.createObjectURL(file);
-});
+    if(!file) return alert('Keine Datei ausgewählt');
+    if(!name) return alert('Gib einen Namen ein');
 
-// Funktion: Upload zu Cloudinary
-async function uploadToCloudinary(file, name) {
     const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", uploadPreset);
-    formData.append("public_id", name);
+    formData.append('file', file);
+    formData.append('upload_preset', uploadPreset);
+    formData.append('public_id', name);
+    formData.append('tags', 'openmc_skins'); // Tag für öffentliche Galerie
 
     try {
-        const res = await axios.post(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, formData);
-        alert("Skin hochgeladen!");
+        await axios.post(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, formData);
         fileInput.value = '';
         skinNameInput.value = '';
-        addToGallery(res.data.secure_url, name);
+        loadGallery();
     } catch(err) {
         console.error(err);
-        alert("Upload fehlgeschlagen!");
+        alert('Upload fehlgeschlagen');
+    }
+});
+
+// Galerie laden
+async function loadGallery() {
+    gallery.innerHTML = '';
+    try {
+        // Alle Skins mit Tag 'openmc_skins' abrufen
+        const res = await axios.get(`https://res.cloudinary.com/${cloudName}/image/list/openmc_skins.json`);
+        const skins = res.data.resources || [];
+        skins.forEach(skin => {
+            const card = document.createElement('div');
+            card.className = 'skin-card';
+
+            // Skin in 3D anzeigen
+            const viewer = new skinview3d.SkinViewer({
+                width: 120,
+                height: 120,
+                canvas: document.createElement('canvas')
+            });
+            viewer.loadSkin(`https://res.cloudinary.com/${cloudName}/image/upload/${skin.public_id}.png`);
+            card.appendChild(viewer.canvas);
+
+            const title = document.createElement('div');
+            title.textContent = skin.public_id;
+            card.appendChild(title);
+
+            const downloadBtn = document.createElement('button');
+            downloadBtn.textContent = 'Download';
+            downloadBtn.onclick = () => window.open(`https://res.cloudinary.com/${cloudName}/image/upload/${skin.public_id}.png`, '_blank');
+            card.appendChild(downloadBtn);
+
+            gallery.appendChild(card);
+        });
+    } catch(err) {
+        console.warn('Galerie konnte nicht geladen werden:', err);
     }
 }
 
-// Galerie direkt aktualisieren
-function addToGallery(url, name) {
-    const card = document.createElement('div');
-    card.className = 'skin-card';
-    const img = document.createElement('img');
-    img.src = url;
-    card.appendChild(img);
-
-    const title = document.createElement('div');
-    title.textContent = name;
-    card.appendChild(title);
-
-    const downloadBtn = document.createElement('button');
-    downloadBtn.textContent = "Download";
-    downloadBtn.onclick = () => window.open(url, "_blank");
-    card.appendChild(downloadBtn);
-
-    gallery.appendChild(card);
-    uploadedSkins.push({url, name});
-}
+// Galerie direkt laden
+loadGallery();
 </script>
 </body>
 </html>
