@@ -5,21 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OpenMC-Skins</title>
 <style>
-body {margin:0; font-family:Arial,sans-serif; background:#121212; color:#fff;}
-header {background:linear-gradient(90deg,#0ff,#f0f); padding:20px; text-align:center; font-size:2em; font-weight:bold;}
-.container {max-width:1000px; margin:20px auto; padding:0 10px;}
-.upload-section {display:flex; flex-direction:column; align-items:center; margin-bottom:20px;}
-.drop-zone {width:300px; height:120px; border:2px dashed #555; background:#2a2a2a; border-radius:10px; display:flex; justify-content:center; align-items:center; cursor:pointer; margin-bottom:10px; transition:0.2s;}
-.drop-zone.dragover {background:#444; border-color:#0ff;}
-.drop-text {font-weight:bold; color:#ccc; text-align:center;}
-.upload-row {display:flex; gap:10px; align-items:center;}
-.upload-row input[type="text"] {padding:10px; font-size:1em; border-radius:5px; border:none;}
-.upload-row button {background:linear-gradient(90deg,#0ff,#f0f); color:#121212; font-weight:bold; border-radius:5px; padding:10px 20px; cursor:pointer;}
-.gallery {display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:15px;}
-.skin-card {background:#1a1a1a; padding:10px; border-radius:10px; text-align:center;}
-.skin-card img {width:120px; height:120px; border-radius:5px; object-fit:contain;}
-.skin-card button {margin-top:5px; padding:5px 10px; background:#f0f; border:none; border-radius:5px; color:#fff; font-weight:bold; cursor:pointer;}
-footer {text-align:center; margin:40px 0 20px 0; font-size:0.8em; color:#888;}
+body {margin:0;font-family:Arial,sans-serif;background:#121212;color:#fff;}
+header {background:linear-gradient(90deg,#0ff,#f0f);padding:20px;text-align:center;font-size:2em;font-weight:bold;}
+.container {max-width:1000px;margin:20px auto;padding:0 10px;}
+.search-bar {margin-bottom:20px;text-align:center;}
+.search-bar input {width:50%;padding:10px;font-size:1em;border-radius:5px;border:none;}
+.upload-section {display:flex;flex-direction:column;align-items:center;margin-bottom:20px;}
+.drop-zone {width:300px;height:120px;border:2px dashed #555;background:#2a2a2a;border-radius:10px;display:flex;flex-direction:column;justify-content:center;align-items:center;cursor:pointer;margin-bottom:10px;transition:background 0.2s,border-color 0.2s;}
+.drop-zone.dragover {background:#444;border-color:#0ff;}
+.drop-text {font-weight:bold;color:#ccc;text-align:center;}
+.upload-row {display:flex;gap:10px;align-items:center;}
+.upload-row input[type="text"] {padding:10px;font-size:1em;border-radius:5px;border:none;}
+.upload-row button {background:linear-gradient(90deg,#0ff,#f0f);color:#121212;font-weight:bold;border-radius:5px;padding:10px 20px;cursor:pointer;transition:transform 0.1s;}
+.upload-row button:hover {transform:scale(1.05);}
+.gallery {display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:15px;}
+.skin-card {background:#1a1a1a;padding:10px;border-radius:10px;text-align:center;}
+.skin-card img {width:100px;height:100px;image-rendering:pixelated;border-radius:5px;}
+.skin-card button {margin-top:5px;padding:5px 10px;background:#f0f;border:none;border-radius:5px;color:#fff;font-weight:bold;cursor:pointer;}
+footer {text-align:center;margin:40px 0 20px 0;font-size:0.8em;color:#888;}
 </style>
 </head>
 <body>
@@ -27,9 +30,13 @@ footer {text-align:center; margin:40px 0 20px 0; font-size:0.8em; color:#888;}
 <header>OpenMC-Skins</header>
 
 <div class="container">
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Nach Skins suchen...">
+    </div>
+
     <div class="upload-section">
         <div id="dropZone" class="drop-zone">
-            <div class="drop-text">Drag & Drop oder hier klicken</div>
+            <div class="drop-text">Drag and Drop oder hier klicken</div>
         </div>
         <input type="file" id="fileInput" accept=".png" style="display:none;">
         <div class="upload-row">
@@ -37,6 +44,7 @@ footer {text-align:center; margin:40px 0 20px 0; font-size:0.8em; color:#888;}
             <button id="uploadBtn">Upload</button>
         </div>
     </div>
+
     <div class="gallery" id="gallery"></div>
 </div>
 
@@ -66,15 +74,15 @@ dropZone.addEventListener('drop', e => {
     if(e.dataTransfer.files.length > 0) fileInput.files = e.dataTransfer.files;
 });
 
-// Upload Funktion
+// Upload
 uploadBtn.addEventListener('click', async () => {
     const file = fileInput.files[0];
-    const name = skinNameInput.value.trim() || (file ? file.name : '');
+    const name = (skinNameInput.value.trim() || (file ? file.name : '')).replace(/\s+/g,'_');
     if(!file) return alert('Keine Datei ausgewählt');
     if(!name) return alert('Gib einen Namen ein');
 
     const { data, error } = await supabase.storage.from(BUCKET).upload(name, file, { upsert:true });
-    if(error){ console.error(error); return alert('Upload fehlgeschlagen: '+error.message); }
+    if(error){ console.error(error); alert('Upload fehlgeschlagen: '+error.message); return; }
 
     fileInput.value='';
     skinNameInput.value='';
@@ -88,9 +96,7 @@ async function loadGallery(){
     if(error){ console.error(error); return; }
 
     for(const file of data){
-        const { publicURL, error: urlError } = supabase.storage.from(BUCKET).getPublicUrl(file.name);
-        if(urlError) continue;
-
+        const { publicURL } = supabase.storage.from(BUCKET).getPublicUrl(file.name);
         const card = document.createElement('div');
         card.className = 'skin-card';
 
@@ -104,7 +110,7 @@ async function loadGallery(){
 
         const downloadBtn = document.createElement('button');
         downloadBtn.textContent='Download';
-        downloadBtn.onclick=()=>window.open(publicURL,'_blank');
+        downloadBtn.onclick = () => window.open(publicURL,'_blank');
         card.appendChild(downloadBtn);
 
         gallery.appendChild(card);
