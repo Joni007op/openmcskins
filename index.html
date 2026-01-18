@@ -1,141 +1,3 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <title>OpenMC-Skins</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- CSS -->
-    <style>
-        body {
-            margin: 0;
-            font-family: 'Arial', sans-serif;
-            background-color: #121212;
-            color: #fff;
-        }
-
-        header {
-            background: linear-gradient(90deg, #0ff, #f0f);
-            padding: 20px;
-            text-align: center;
-            font-size: 2em;
-            font-weight: bold;
-            letter-spacing: 2px;
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: 20px auto;
-            padding: 0 10px;
-        }
-
-        .search-bar {
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: center;
-        }
-
-        .search-bar input {
-            width: 50%;
-            padding: 10px;
-            font-size: 1em;
-            border-radius: 5px;
-            border: none;
-        }
-
-        .upload-section {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .upload-section input[type="file"] {
-            display: none;
-        }
-
-        .upload-label {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: #0ff;
-            color: #121212;
-            font-weight: bold;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-bottom: 10px;
-        }
-
-        .upload-name {
-            display: block;
-            margin-top: 5px;
-            color: #fff;
-        }
-
-        .gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 15px;
-        }
-
-        .skin-card {
-            background-color: #1a1a1a;
-            padding: 10px;
-            border-radius: 10px;
-            text-align: center;
-            position: relative;
-        }
-
-        .skin-card img {
-            width: 100px;
-            height: 100px;
-            image-rendering: pixelated;
-            border-radius: 5px;
-        }
-
-        .skin-card button {
-            margin-top: 5px;
-            padding: 5px 10px;
-            background-color: #f0f;
-            border: none;
-            border-radius: 5px;
-            color: #fff;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        footer {
-            text-align: center;
-            margin: 40px 0 20px 0;
-            font-size: 0.8em;
-            color: #888;
-        }
-    </style>
-</head>
-<body>
-
-<header>
-    OpenMC-Skins
-</header>
-
-<div class="container">
-
-    <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="Nach Skins suchen...">
-    </div>
-
-    <div class="upload-section">
-        <label class="upload-label" for="fileInput">Skin hochladen</label>
-        <input type="file" id="fileInput" accept=".png">
-        <input type="text" id="skinName" placeholder="Name des Skins">
-    </div>
-
-    <div class="gallery" id="gallery"></div>
-
-</div>
-
-<footer>
-    Diese Seite ist ein Fan-Projekt und steht in keiner offiziellen Verbindung zu Mojang/Microsoft. <br>
-    Minecraft und Skins sind geistiges Eigentum von Mojang/Microsoft.
-</footer>
-
-<!-- Firebase Scripts -->
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js"></script>
 
@@ -150,7 +12,7 @@
       appId: "1:97231924615:web:6271d12ce917699f68f722"
     };
 
-    // Firebase initialisieren
+    // Firebase initialisieren (modular v9)
     const app = firebase.initializeApp(firebaseConfig);
     const storage = firebase.storage();
 
@@ -159,54 +21,56 @@
     const gallery = document.getElementById('gallery');
     const searchInput = document.getElementById('searchInput');
 
-    // Upload
-    fileInput.addEventListener('change', () => {
+    // Upload-Funktion
+    fileInput.addEventListener('change', async () => {
         const file = fileInput.files[0];
         const name = skinNameInput.value.trim() || file.name;
         if (!file) return alert('Keine Datei ausgewählt');
 
-        const storageRef = storage.ref('skins/' + name);
-        const uploadTask = storageRef.put(file);
-
-        uploadTask.on('state_changed',
-            null,
-            error => { console.error(error); alert('Upload fehlgeschlagen'); },
-            () => {
-                alert('Skin hochgeladen!');
-                fileInput.value = '';
-                skinNameInput.value = '';
-                loadGallery();
-            }
-        );
+        try {
+            const storageRef = storage.ref('skins/' + name);
+            await storageRef.put(file); // Upload starten
+            alert('Skin hochgeladen!');
+            fileInput.value = '';
+            skinNameInput.value = '';
+            loadGallery(); // Galerie aktualisieren
+        } catch (error) {
+            console.error(error);
+            alert('Upload fehlgeschlagen!');
+        }
     });
 
     // Galerie laden
     async function loadGallery() {
         gallery.innerHTML = '';
         const listRef = storage.ref('skins');
-        const res = await listRef.listAll();
-        res.items.forEach(async itemRef => {
-            const url = await itemRef.getDownloadURL();
-            const name = itemRef.name;
+        try {
+            const res = await listRef.listAll();
+            res.items.forEach(async (itemRef) => {
+                const url = await itemRef.getDownloadURL();
+                const name = itemRef.name;
 
-            const card = document.createElement('div');
-            card.className = 'skin-card';
+                const card = document.createElement('div');
+                card.className = 'skin-card';
 
-            const img = document.createElement('img');
-            img.src = url;
-            card.appendChild(img);
+                const img = document.createElement('img');
+                img.src = url;
+                card.appendChild(img);
 
-            const title = document.createElement('div');
-            title.textContent = name;
-            card.appendChild(title);
+                const title = document.createElement('div');
+                title.textContent = name;
+                card.appendChild(title);
 
-            const downloadBtn = document.createElement('button');
-            downloadBtn.textContent = 'Download';
-            downloadBtn.onclick = () => { window.open(url, '_blank'); };
-            card.appendChild(downloadBtn);
+                const downloadBtn = document.createElement('button');
+                downloadBtn.textContent = 'Download';
+                downloadBtn.onclick = () => { window.open(url, '_blank'); };
+                card.appendChild(downloadBtn);
 
-            gallery.appendChild(card);
-        });
+                gallery.appendChild(card);
+            });
+        } catch (err) {
+            console.error(err);
+        }
     }
 
     // Suche
@@ -218,10 +82,6 @@
         });
     });
 
-    // Initial laden
+    // Galerie initial laden
     loadGallery();
 </script>
-
-</body>
-</html>
-
