@@ -5,70 +5,124 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OpenMC-Skins</title>
 
+<!-- =========================
+STYLES
+========================= -->
 <style>
+* {
+    box-sizing: border-box;
+}
+
 body {
     margin: 0;
     font-family: Arial, sans-serif;
     background-color: #121212;
-    color: #fff;
+    color: #ffffff;
 }
 
+/* ---------- HEADER ---------- */
 header {
-    background: linear-gradient(90deg, #0ff, #f0f);
+    background: linear-gradient(90deg, #00ffff, #ff00ff);
     padding: 20px;
     text-align: center;
-    font-size: 2em;
+    font-size: 2.2em;
     font-weight: bold;
 }
 
+/* ---------- LAYOUT ---------- */
 .container {
-    max-width: 1000px;
+    max-width: 1100px;
     margin: 30px auto;
-    padding: 0 15px;
+    padding: 0 20px;
 }
 
-.upload-box {
-    background: #1e1e1e;
+/* ---------- UPLOAD ---------- */
+.upload-section {
+    background: #1c1c1c;
     padding: 20px;
-    border-radius: 12px;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+/* DROP ZONE */
+.drop-zone {
+    width: 360px;
+    height: 140px;
+    border: 2px dashed #555;
+    border-radius: 14px;
+    background-color: #2a2a2a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.2s;
+    position: relative;
+}
+
+.drop-zone.dragover {
+    border-color: #00ffff;
+    background-color: #3a3a3a;
+}
+
+.drop-zone-text {
+    text-align: center;
+    color: #cccccc;
+    font-weight: bold;
+    pointer-events: none;
+}
+
+.drop-zone input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+/* UPLOAD ROW */
+.upload-row {
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
     justify-content: center;
 }
 
-.upload-box input[type="text"] {
+.upload-row input {
     padding: 10px;
+    font-size: 1em;
     border-radius: 6px;
     border: none;
-    font-size: 1em;
 }
 
-.upload-box button {
-    padding: 10px 18px;
+.upload-row button {
+    padding: 10px 22px;
+    font-size: 1em;
     border-radius: 6px;
     border: none;
-    font-weight: bold;
     cursor: pointer;
-    background: linear-gradient(90deg, #0ff, #f0f);
+    font-weight: bold;
+    background: linear-gradient(90deg, #00ffff, #ff00ff);
     color: #121212;
 }
 
-.upload-box button:hover {
+.upload-row button:hover {
     transform: scale(1.05);
 }
 
+/* ---------- GALLERY ---------- */
 .gallery {
     margin-top: 40px;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 15px;
+    gap: 18px;
 }
 
 .skin-card {
     background: #1a1a1a;
+    border-radius: 12px;
     padding: 10px;
-    border-radius: 10px;
     text-align: center;
 }
 
@@ -76,17 +130,30 @@ header {
     width: 128px;
     height: 128px;
     image-rendering: pixelated;
-    border-radius: 6px;
+    border-radius: 8px;
 }
 
 .skin-name {
-    margin-top: 5px;
+    margin-top: 6px;
     font-weight: bold;
+    font-size: 0.9em;
 }
 
+.download-btn {
+    margin-top: 6px;
+    padding: 6px 10px;
+    font-size: 0.85em;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    background-color: #ff00ff;
+    color: #fff;
+}
+
+/* ---------- FOOTER ---------- */
 footer {
-    text-align: center;
     margin: 40px 0 20px;
+    text-align: center;
     font-size: 0.8em;
     color: #888;
 }
@@ -99,62 +166,168 @@ footer {
 
 <div class="container">
 
-    <div class="upload-box">
-        <input type="file" id="fileInput" accept=".png">
-        <input type="text" id="skinName" placeholder="Skin-Name">
-        <button id="uploadBtn">Upload</button>
+    <!-- UPLOAD -->
+    <div class="upload-section">
+
+        <div class="drop-zone" id="dropZone">
+            <div class="drop-zone-text">
+                Drag & Drop<br>
+                oder klicken zum Auswählen
+            </div>
+            <input type="file" id="fileInput" accept=".png">
+        </div>
+
+        <div class="upload-row">
+            <input type="text" id="skinName" placeholder="Skin-Name">
+            <button id="uploadBtn">Upload</button>
+        </div>
+
     </div>
 
+    <!-- GALLERY -->
     <div class="gallery" id="gallery"></div>
 
 </div>
 
 <footer>
-Fan-Projekt – keine offizielle Verbindung zu Mojang oder Microsoft.
+Fan-Projekt – keine offizielle Verbindung zu Mojang / Microsoft.
 </footer>
 
+<!-- =========================
+SUPABASE
+========================= -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
+/* =========================
+SUPABASE CONFIG
+========================= */
+const SUPABASE_URL = "https://iomomoktrjlhqoeoavkb.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_q1BzzFtE0bFieXJtPD6Sng_lZQXC740";
+
+const supabase = supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+);
+
+/* =========================
+ELEMENTS
+========================= */
+const dropZone = document.getElementById("dropZone");
 const fileInput = document.getElementById("fileInput");
-const skinNameInput = document.getElementById("skinName");
 const uploadBtn = document.getElementById("uploadBtn");
+const skinNameInput = document.getElementById("skinName");
 const gallery = document.getElementById("gallery");
 
-uploadBtn.addEventListener("click", () => {
-    const file = fileInput.files[0];
-    const name = skinNameInput.value.trim();
+let selectedFile = null;
 
-    if (!file) {
+/* =========================
+DRAG & DROP
+========================= */
+dropZone.addEventListener("click", () => fileInput.click());
+
+dropZone.addEventListener("dragover", e => {
+    e.preventDefault();
+    dropZone.classList.add("dragover");
+});
+
+dropZone.addEventListener("dragleave", () => {
+    dropZone.classList.remove("dragover");
+});
+
+dropZone.addEventListener("drop", e => {
+    e.preventDefault();
+    dropZone.classList.remove("dragover");
+    selectedFile = e.dataTransfer.files[0];
+});
+
+fileInput.addEventListener("change", () => {
+    selectedFile = fileInput.files[0];
+});
+
+/* =========================
+UPLOAD
+========================= */
+uploadBtn.addEventListener("click", async () => {
+    if (!selectedFile) {
         alert("Bitte Skin auswählen");
         return;
     }
 
+    const name = skinNameInput.value.trim();
     if (!name) {
         alert("Bitte Namen eingeben");
         return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
+    const filePath = `${Date.now()}_${name}.png`;
+
+    const { error } = await supabase
+        .storage
+        .from("skins")
+        .upload(filePath, selectedFile, {
+            cacheControl: "3600",
+            upsert: false
+        });
+
+    if (error) {
+        alert("Upload fehlgeschlagen");
+        console.error(error);
+        return;
+    }
+
+    selectedFile = null;
+    fileInput.value = "";
+    skinNameInput.value = "";
+
+    loadGallery();
+});
+
+/* =========================
+LOAD GALLERY
+========================= */
+async function loadGallery() {
+    gallery.innerHTML = "";
+
+    const { data, error } = await supabase
+        .storage
+        .from("skins")
+        .list("", { limit: 100 });
+
+    if (error) {
+        console.error(error);
+        return;
+    }
+
+    for (const file of data) {
+        const { data: urlData } = supabase
+            .storage
+            .from("skins")
+            .getPublicUrl(file.name);
+
         const card = document.createElement("div");
         card.className = "skin-card";
 
         const img = document.createElement("img");
-        img.src = reader.result;
+        img.src = urlData.publicUrl;
 
         const title = document.createElement("div");
         title.className = "skin-name";
-        title.textContent = name;
+        title.textContent = file.name.replace(".png", "");
+
+        const btn = document.createElement("button");
+        btn.className = "download-btn";
+        btn.textContent = "Download";
+        btn.onclick = () => window.open(urlData.publicUrl, "_blank");
 
         card.appendChild(img);
         card.appendChild(title);
-        gallery.prepend(card);
+        card.appendChild(btn);
+        gallery.appendChild(card);
+    }
+}
 
-        fileInput.value = "";
-        skinNameInput.value = "";
-    };
-
-    reader.readAsDataURL(file);
-});
+loadGallery();
 </script>
 
 </body>
