@@ -5,106 +5,144 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OpenMC-Skins</title>
 <style>
-body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background-color: #121212;
-    color: #fff;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-header {
-    width: 100%;
-    padding: 20px 0;
-    text-align: center;
-    font-size: 2em;
-    font-weight: bold;
-    background: linear-gradient(90deg, #0ff, #f0f);
-}
-.container {
-    max-width: 600px;
-    width: 95%;
-    margin-top: 30px;
-    text-align: center;
-}
-#dropzone {
-    border: 2px dashed #555;
-    border-radius: 10px;
-    padding: 40px;
-    background-color: #2a2a2a;
-    cursor: pointer;
-    transition: 0.2s all;
-    margin-bottom: 15px;
-}
-#dropzone.dragover {
-    background-color: #444;
-    border-color: #0ff;
-}
-#dropzone p {
-    margin: 0;
-    font-weight: bold;
-    color: #ccc;
-}
-.file-info {
-    margin-top: 10px;
-    display: none;
-    font-weight: bold;
-    color: #0ff;
-}
+  body, html { margin:0; padding:0; width:100%; height:100%; font-family: monospace; background: #000; color: #fff; overflow-x:hidden; }
+  #splash { position:fixed; top:0; left:0; width:100%; height:100%; display:flex; justify-content:center; align-items:center; background:#000; flex-direction:column; }
+  #blockCanvas { cursor:pointer; image-rendering: pixelated; border:3px solid #555; }
+  #main { display:none; max-width:1000px; margin:0 auto; padding:20px; }
+  header { font-size:2em; font-weight:bold; text-align:center; margin-bottom:20px; color:#0ff; text-shadow: 2px 2px #f0f; }
+  .gallery { display:grid; grid-template-columns: repeat(auto-fill, minmax(120px,1fr)); gap:15px; }
+  .skin-card { background:#111; padding:10px; border-radius:8px; text-align:center; }
+  .skin-card img { width:100px; height:100px; image-rendering: pixelated; border-radius:5px; }
+  .skin-card button { margin-top:5px; padding:5px 10px; background:#0ff; border:none; border-radius:5px; cursor:pointer; color:#000; font-weight:bold; }
+  .upload-section { margin:20px 0; display:flex; gap:10px; align-items:center; }
+  .upload-section input[type=text] { padding:10px; border-radius:5px; border:none; }
+  .upload-section input[type=file] { display:none; }
+  .upload-section button { padding:10px 20px; border-radius:5px; border:none; background:linear-gradient(90deg,#0ff,#f0f); cursor:pointer; font-weight:bold; color:#000; }
 </style>
 </head>
 <body>
 
-<header>OpenMC-Skins</header>
+<!-- SPLASHSCREEN -->
+<div id="splash">
+  <canvas id="blockCanvas" width="32" height="32"></canvas>
+  <div style="margin-top:20px; color:#ccc;">Block gedrückt halten um zu starten...</div>
+</div>
 
-<div class="container">
-    <div id="dropzone">
-        <p>Drag & Drop oder klicken</p>
-        <input type="file" id="fileInput" accept=".png" style="display:none;">
+<!-- HAUPTSEITE -->
+<div id="main">
+  <header>OpenMC-Skins</header>
+  
+  <div id="adminUpload" style="display:none;">
+    <div class="upload-section">
+      <input type="file" id="fileInput" accept=".png">
+      <input type="text" id="skinName" placeholder="Name des Skins">
+      <button id="uploadBtn">Upload</button>
     </div>
-    <div class="file-info" id="fileInfo">
-        ✅ <span id="fileName"></span>
-    </div>
+  </div>
+  
+  <div class="gallery" id="gallery"></div>
 </div>
 
 <script>
-const dropzone = document.getElementById('dropzone');
-const fileInput = document.getElementById('fileInput');
-const fileInfo = document.getElementById('fileInfo');
-const fileNameSpan = document.getElementById('fileName');
+/********** SPLASHSCREEN UND ANIMATION **********/
+const canvas = document.getElementById('blockCanvas');
+const ctx = canvas.getContext('2d');
 
-// Klick öffnet Datei-Auswahl
-dropzone.addEventListener('click', () => fileInput.click());
+// Wir generieren 8 Frames des Minecraft-Grasblock-Abbaus (vereinfacht)
+const frames = [];
+for(let f=0; f<8; f++){
+  const imageData = ctx.createImageData(32,32);
+  for(let i=0;i<32*32;i++){
+    const idx=i*4;
+    // Pixel einfärben, einfache Simulation: grün für Gras, braun für Erde
+    const x=i%32, y=Math.floor(i/32);
+    let r,g,b,a=255;
+    if(y<16-f*2){ r=50; g=200; b=50; } // Gras
+    else { r=100; g=60; b=30; } // Erde
+    imageData.data[idx]=r;
+    imageData.data[idx+1]=g;
+    imageData.data[idx+2]=b;
+    imageData.data[idx+3]=a;
+  }
+  frames.push(imageData);
+}
 
-// Drag & Drop
-dropzone.addEventListener('dragover', e => {
-    e.preventDefault();
-    dropzone.classList.add('dragover');
-});
-dropzone.addEventListener('dragleave', e => {
-    e.preventDefault();
-    dropzone.classList.remove('dragover');
-});
-dropzone.addEventListener('drop', e => {
-    e.preventDefault();
-    dropzone.classList.remove('dragover');
-    const file = e.dataTransfer.files[0];
-    if(file) {
-        fileInput.files = e.dataTransfer.files;
-        showFileInfo(file);
-    }
+let currentFrame=0;
+let holding=false;
+
+function drawFrame(f){ ctx.putImageData(frames[f],0,0); }
+drawFrame(0);
+
+canvas.addEventListener('mousedown',()=>{ holding=true; animateBlock(); });
+canvas.addEventListener('mouseup',()=>{ holding=false; });
+
+function animateBlock(){
+  if(!holding) return;
+  if(currentFrame<frames.length-1){
+    currentFrame++;
+    drawFrame(currentFrame);
+    setTimeout(animateBlock,100);
+  } else {
+    // Animation fertig -> Hauptseite zeigen
+    document.getElementById('splash').style.display='none';
+    document.getElementById('main').style.display='block';
+    checkAdmin();
+    loadGallery();
+  }
+}
+
+/********** ADMIN CHECK **********/
+function checkAdmin(){
+  const params=new URLSearchParams(window.location.search);
+  if(params.get('admin')==='1236767'){
+    document.getElementById('adminUpload').style.display='flex';
+  }
+}
+
+/********** UPLOAD UND GALERIE SIMULIERT **********/
+let skins=[]; // Wir simulieren Upload in memory
+
+const fileInput=document.getElementById('fileInput');
+const skinNameInput=document.getElementById('skinName');
+const uploadBtn=document.getElementById('uploadBtn');
+const gallery=document.getElementById('gallery');
+
+uploadBtn.addEventListener('click',()=>{
+  const file=fileInput.files[0];
+  const name=skinNameInput.value.trim() || (file?file.name:'');
+  if(!file){ alert('Keine Datei ausgewählt'); return; }
+  if(!name){ alert('Gib einen Namen ein'); return; }
+
+  const reader=new FileReader();
+  reader.onload=(e)=>{
+    skins.push({name:name, url:e.target.result});
+    fileInput.value='';
+    skinNameInput.value='';
+    loadGallery();
+  };
+  reader.readAsDataURL(file);
 });
 
-// Datei-Auswahl über Klick
-fileInput.addEventListener('change', () => {
-    const file = fileInput.files[0];
-    if(file) showFileInfo(file);
-});
+function loadGallery(){
+  gallery.innerHTML='';
+  skins.forEach((skin,index)=>{
+    const card=document.createElement('div');
+    card.className='skin-card';
+    const img=document.createElement('img');
+    img.src=skin.url;
+    card.appendChild(img);
 
-function showFileInfo(file) {
-    fileInfo.style.display = 'block';
-    fileNameSpan.textContent = file.name;
+    const title=document.createElement('div');
+    title.textContent=skin.name;
+    card.appendChild(title);
+
+    const btn=document.createElement('button');
+    btn.textContent='Download';
+    btn.onclick=()=>{ window.open(skin.url,'_blank'); };
+    card.appendChild(btn);
+
+    gallery.appendChild(card);
+  });
 }
 </script>
 
