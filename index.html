@@ -27,60 +27,25 @@ header {
     padding: 0 15px;
 }
 
-.upload-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-}
-
-.drop-zone {
-    position: relative;
-    width: 320px;
-    height: 130px;
-    border: 2px dashed #555;
-    background-color: #2a2a2a;
+.upload-box {
+    background: #1e1e1e;
+    padding: 20px;
     border-radius: 12px;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: 0.2s;
-}
-
-.drop-zone.dragover {
-    background-color: #3a3a3a;
-    border-color: #0ff;
-}
-
-.drop-text {
-    color: #bbb;
-    font-weight: bold;
-    text-align: center;
-    pointer-events: none;
-}
-
-.drop-zone input[type="file"] {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
-}
-
-.upload-row {
-    display: flex;
     gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
-.upload-row input {
+.upload-box input[type="text"] {
     padding: 10px;
     border-radius: 6px;
     border: none;
     font-size: 1em;
 }
 
-.upload-row button {
-    padding: 10px 20px;
+.upload-box button {
+    padding: 10px 18px;
     border-radius: 6px;
     border: none;
     font-weight: bold;
@@ -89,14 +54,14 @@ header {
     color: #121212;
 }
 
-.upload-row button:hover {
+.upload-box button:hover {
     transform: scale(1.05);
 }
 
 .gallery {
     margin-top: 40px;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 15px;
 }
 
@@ -108,10 +73,15 @@ header {
 }
 
 .skin-card img {
-    width: 100px;
-    height: 100px;
+    width: 128px;
+    height: 128px;
     image-rendering: pixelated;
     border-radius: 6px;
+}
+
+.skin-name {
+    margin-top: 5px;
+    font-weight: bold;
 }
 
 footer {
@@ -129,21 +99,14 @@ footer {
 
 <div class="container">
 
-    <div class="upload-section">
-
-        <div class="drop-zone" id="dropZone">
-            <div class="drop-text">Drag & Drop<br>oder Datei auswählen</div>
-            <input type="file" id="fileInput" accept=".png">
-        </div>
-
-        <div class="upload-row">
-            <input type="text" id="skinName" placeholder="Name des Skins">
-            <button id="uploadBtn">Upload</button>
-        </div>
-
+    <div class="upload-box">
+        <input type="file" id="fileInput" accept=".png">
+        <input type="text" id="skinName" placeholder="Skin-Name">
+        <button id="uploadBtn">Upload</button>
     </div>
 
     <div class="gallery" id="gallery"></div>
+
 </div>
 
 <footer>
@@ -151,32 +114,46 @@ Fan-Projekt – keine offizielle Verbindung zu Mojang oder Microsoft.
 </footer>
 
 <script>
-const dropZone = document.getElementById("dropZone");
 const fileInput = document.getElementById("fileInput");
+const skinNameInput = document.getElementById("skinName");
 const uploadBtn = document.getElementById("uploadBtn");
+const gallery = document.getElementById("gallery");
 
-// Drag Highlight
-dropZone.addEventListener("dragover", e => {
-    e.preventDefault();
-    dropZone.classList.add("dragover");
-});
-
-dropZone.addEventListener("dragleave", () => {
-    dropZone.classList.remove("dragover");
-});
-
-dropZone.addEventListener("drop", () => {
-    dropZone.classList.remove("dragover");
-});
-
-// Test-Upload (nur Anzeige)
 uploadBtn.addEventListener("click", () => {
     const file = fileInput.files[0];
+    const name = skinNameInput.value.trim();
+
     if (!file) {
-        alert("Keine Datei ausgewählt");
+        alert("Bitte Skin auswählen");
         return;
     }
-    alert("Datei erkannt: " + file.name);
+
+    if (!name) {
+        alert("Bitte Namen eingeben");
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+        const card = document.createElement("div");
+        card.className = "skin-card";
+
+        const img = document.createElement("img");
+        img.src = reader.result;
+
+        const title = document.createElement("div");
+        title.className = "skin-name";
+        title.textContent = name;
+
+        card.appendChild(img);
+        card.appendChild(title);
+        gallery.prepend(card);
+
+        fileInput.value = "";
+        skinNameInput.value = "";
+    };
+
+    reader.readAsDataURL(file);
 });
 </script>
 
