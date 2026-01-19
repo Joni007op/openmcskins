@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OpenMC-Skins</title>
+
 <style>
 body {
     margin: 0;
@@ -11,6 +12,7 @@ body {
     background-color: #121212;
     color: #fff;
 }
+
 header {
     background: linear-gradient(90deg, #0ff, #f0f);
     padding: 20px;
@@ -18,217 +20,165 @@ header {
     font-size: 2em;
     font-weight: bold;
 }
+
 .container {
     max-width: 1000px;
-    margin: 20px auto;
-    padding: 0 10px;
+    margin: 30px auto;
+    padding: 0 15px;
 }
-.search-bar {
-    margin-bottom: 20px;
-    text-align: center;
-}
-.search-bar input {
-    width: 50%;
-    padding: 10px;
-    font-size: 1em;
-    border-radius: 5px;
-    border: none;
-}
+
 .upload-section {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: 20px;
+    gap: 15px;
 }
+
 .drop-zone {
-    width: 300px;
-    height: 120px;
+    position: relative;
+    width: 320px;
+    height: 130px;
     border: 2px dashed #555;
     background-color: #2a2a2a;
-    border-radius: 10px;
+    border-radius: 12px;
     display: flex;
-    flex-direction: column;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
     cursor: pointer;
-    margin-bottom: 10px;
-    transition: background 0.2s, border-color 0.2s;
+    transition: 0.2s;
 }
+
 .drop-zone.dragover {
-    background-color: #444;
+    background-color: #3a3a3a;
     border-color: #0ff;
 }
+
 .drop-text {
+    color: #bbb;
     font-weight: bold;
-    color: #ccc;
     text-align: center;
+    pointer-events: none;
 }
+
+.drop-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
 .upload-row {
     display: flex;
     gap: 10px;
-    align-items: center;
 }
-.upload-row input[type="text"] {
+
+.upload-row input {
     padding: 10px;
-    font-size: 1em;
-    border-radius: 5px;
+    border-radius: 6px;
     border: none;
+    font-size: 1em;
 }
+
 .upload-row button {
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
     background: linear-gradient(90deg, #0ff, #f0f);
     color: #121212;
-    font-weight: bold;
-    border-radius: 5px;
-    padding: 10px 20px;
-    cursor: pointer;
-    transition: transform 0.1s;
 }
+
 .upload-row button:hover {
     transform: scale(1.05);
 }
+
 .gallery {
+    margin-top: 40px;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     gap: 15px;
 }
+
 .skin-card {
-    background-color: #1a1a1a;
+    background: #1a1a1a;
     padding: 10px;
     border-radius: 10px;
     text-align: center;
 }
+
 .skin-card img {
     width: 100px;
     height: 100px;
     image-rendering: pixelated;
-    border-radius: 5px;
+    border-radius: 6px;
 }
-.skin-card button {
-    margin-top: 5px;
-    padding: 5px 10px;
-    background-color: #f0f;
-    border: none;
-    border-radius: 5px;
-    color: #fff;
-    font-weight: bold;
-    cursor: pointer;
-}
+
 footer {
     text-align: center;
-    margin: 40px 0 20px 0;
+    margin: 40px 0 20px;
     font-size: 0.8em;
     color: #888;
 }
 </style>
 </head>
+
 <body>
 
 <header>OpenMC-Skins</header>
 
 <div class="container">
-    <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="Nach Skins suchen...">
-    </div>
 
     <div class="upload-section">
-        <div id="dropZone" class="drop-zone">
-            <div class="drop-text">Drag and Drop oder Datei zum Auswählen</div>
-            <input type="file" id="fileInput" accept=".png" style="display:none;">
+
+        <div class="drop-zone" id="dropZone">
+            <div class="drop-text">Drag & Drop<br>oder Datei auswählen</div>
+            <input type="file" id="fileInput" accept=".png">
         </div>
+
         <div class="upload-row">
             <input type="text" id="skinName" placeholder="Name des Skins">
             <button id="uploadBtn">Upload</button>
         </div>
+
     </div>
 
     <div class="gallery" id="gallery"></div>
 </div>
 
 <footer>
-Diese Seite ist ein Fan-Projekt und steht in keiner offiziellen Verbindung zu Mojang/Microsoft.<br>
-Minecraft und Skins sind geistiges Eigentum von Mojang/Microsoft.
+Fan-Projekt – keine offizielle Verbindung zu Mojang oder Microsoft.
 </footer>
 
-<!-- Cloudinary Upload -->
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
-const cloudName = "DBFY3KJGB"; // DEIN Cloud Name
-const uploadPreset = "OOpenMC-Skin"; // DEIN Unsigned Upload Preset
+const dropZone = document.getElementById("dropZone");
+const fileInput = document.getElementById("fileInput");
+const uploadBtn = document.getElementById("uploadBtn");
 
-const dropZone = document.getElementById('dropZone');
-const fileInput = document.getElementById('fileInput');
-const uploadBtn = document.getElementById('uploadBtn');
-const skinNameInput = document.getElementById('skinName');
-const gallery = document.getElementById('gallery');
-const searchInput = document.getElementById('searchInput');
-
-// DropZone click öffnet Datei
-dropZone.addEventListener('click', () => fileInput.click());
-
-// Drag & Drop
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-dropZone.addEventListener('dragleave', e => { e.preventDefault(); dropZone.classList.remove('dragover'); });
-dropZone.addEventListener('drop', e => {
+// Drag Highlight
+dropZone.addEventListener("dragover", e => {
     e.preventDefault();
-    dropZone.classList.remove('dragover');
-    const file = e.dataTransfer.files[0];
-    if (file) fileInput.files = e.dataTransfer.files;
+    dropZone.classList.add("dragover");
 });
 
-// Upload-Button
-uploadBtn.addEventListener('click', async () => {
+dropZone.addEventListener("dragleave", () => {
+    dropZone.classList.remove("dragover");
+});
+
+dropZone.addEventListener("drop", () => {
+    dropZone.classList.remove("dragover");
+});
+
+// Test-Upload (nur Anzeige)
+uploadBtn.addEventListener("click", () => {
     const file = fileInput.files[0];
-    const name = skinNameInput.value.trim() || (file ? file.name : '');
-    if (!file) return alert('Keine Datei ausgewählt');
-    if (!name) return alert('Gib einen Namen ein');
-
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', uploadPreset);
-    formData.append('public_id', name);
-
-    try {
-        const res = await axios.post(https://api.cloudinary.com/v1_1/${cloudName}/image/upload, formData);
-        alert('Skin hochgeladen!');
-        fileInput.value = '';
-        skinNameInput.value = '';
-        loadGallery();
-    } catch(err) {
-        console.error(err);
-        alert('Upload fehlgeschlagen');
+    if (!file) {
+        alert("Keine Datei ausgewählt");
+        return;
     }
+    alert("Datei erkannt: " + file.name);
 });
-
-// Galerie laden
-async function loadGallery() {
-    gallery.innerHTML = '';
-    try {
-        const res = await axios.get(https://res.cloudinary.com/${cloudName}/image/list/openmc_skins.json);
-        const images = res.data.resources || [];
-        images.forEach(img => {
-            const card = document.createElement('div');
-            card.className = 'skin-card';
-            const image = document.createElement('img');
-            image.src = img.secure_url;
-            card.appendChild(image);
-
-            const title = document.createElement('div');
-            title.textContent = img.public_id;
-            card.appendChild(title);
-
-            const downloadBtn = document.createElement('button');
-            downloadBtn.textContent = 'Download';
-            downloadBtn.onclick = () => window.open(img.secure_url, '_blank');
-            card.appendChild(downloadBtn);
-
-            gallery.appendChild(card);
-        });
-    } catch(err) {
-        console.warn('Galerie konnte nicht geladen werden:', err);
-    }
-}
-
-loadGallery();
 </script>
+
 </body>
 </html>
