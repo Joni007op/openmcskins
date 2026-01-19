@@ -2,79 +2,233 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>OpenMC-Skin Upload</title>
+<title>OpenMC Skins</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-body {
-  background:#0f0f0f;
-  color:white;
-  font-family:Arial, sans-serif;
-  text-align:center;
+/* ===== GLOBAL ===== */
+* {
+  box-sizing: border-box;
 }
 
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background:
+    linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)),
+    repeating-linear-gradient(
+      45deg,
+      #111 0,
+      #111 10px,
+      #151515 10px,
+      #151515 20px
+    );
+  color: #eaeaea;
+  text-align: center;
+}
+
+/* ===== HEADER ===== */
+h1 {
+  margin-top: 30px;
+  font-size: 2.8em;
+  letter-spacing: 2px;
+  color: #b9ffe9;
+  text-shadow:
+    0 0 5px #00ffcc,
+    0 0 15px #00ffcc;
+}
+
+/* ===== CARD CONTAINER ===== */
+.main-card {
+  background: #0e0e0e;
+  border: 2px solid #1f1f1f;
+  box-shadow: 0 0 0 4px #080808;
+  max-width: 520px;
+  margin: 30px auto;
+  padding: 25px;
+}
+
+/* ===== DROPZONE ===== */
 #dropzone {
-  border:3px dashed #555;
-  padding:40px;
-  margin:20px auto;
-  width:400px;
-  cursor:pointer;
+  border: 3px dashed #3a3a3a;
+  background: radial-gradient(circle at top, #1b1b1b, #0f0f0f);
+  padding: 35px;
+  cursor: pointer;
+  transition: 0.2s;
+  position: relative;
 }
 
 #dropzone.dragover {
-  border-color:#00ffcc;
+  border-color: #00ffcc;
+  box-shadow: 0 0 15px #00ffcc55;
 }
 
-input, button {
-  padding:10px;
-  margin:5px;
+#dropText {
+  color: #bbbbbb;
+  font-size: 1.1em;
 }
 
+#success {
+  display: none;
+  color: #00ff88;
+  font-size: 1.2em;
+}
+
+#fileName {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.9em;
+  color: #9fffe3;
+  word-break: break-all;
+}
+
+/* ===== INPUTS ===== */
+input[type="text"] {
+  width: 90%;
+  max-width: 350px;
+  padding: 12px;
+  margin-top: 15px;
+  background: #141414;
+  border: 2px solid #2a2a2a;
+  color: white;
+  outline: none;
+}
+
+input[type="text"]:focus {
+  border-color: #00ffcc;
+}
+
+/* ===== BUTTON ===== */
+button {
+  margin-top: 15px;
+  padding: 12px 30px;
+  background: linear-gradient(180deg, #00ffcc, #00bfa5);
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  color: #002f29;
+  box-shadow:
+    inset 0 -4px 0 #009e88,
+    0 4px 0 #003f38;
+  transition: 0.1s;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 -2px 0 #009e88,
+    0 1px 0 #003f38;
+}
+
+/* ===== STATUS ===== */
+#status {
+  margin-top: 10px;
+  font-size: 0.95em;
+  min-height: 20px;
+}
+
+/* ===== GALLERY ===== */
 #gallery {
-  display:flex;
-  flex-wrap:wrap;
-  justify-content:center;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 20px;
+  max-width: 900px;
+  margin: 50px auto;
+  padding: 0 20px;
 }
 
 .skin {
-  margin:10px;
+  background: #0c0c0c;
+  border: 2px solid #222;
+  padding: 10px;
+  box-shadow: inset 0 0 0 3px #070707;
 }
 
 .skin img {
-  width:128px;
-  height:128px;
-  image-rendering:pixelated;
-  border:1px solid #333;
+  width: 128px;
+  height: 128px;
+  image-rendering: pixelated;
+  background: #111;
+}
+
+.skin a {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 0.85em;
+  color: #7dffe0;
+  text-decoration: none;
+}
+
+.skin a:hover {
+  text-decoration: underline;
+}
+
+/* ===== FOOTER ===== */
+footer {
+  margin: 50px 0 20px;
+  font-size: 0.75em;
+  color: #777;
 }
 </style>
 </head>
 
 <body>
 
-<h1>OpenMC-Skin Upload</h1>
+<h1>OpenMC Skins</h1>
 
-<div id="dropzone">
-  <p>Datei hier reinziehen<br>ODER klicken</p>
-  <input type="file" id="fileInput" accept="image/png" hidden>
-  <input type="text" id="nameInput" placeholder="Skin-Name">
+<div class="main-card">
+
+  <div id="dropzone">
+    <div id="dropText">
+      ⛏️ Datei hier reinziehen<br>
+      oder klicken
+    </div>
+
+    <div id="success">
+      ✅ Datei bereit
+      <span id="fileName"></span>
+    </div>
+
+    <input type="file" id="fileInput" accept="image/png" hidden>
+  </div>
+
+  <input type="text" id="nameInput" placeholder="Skin-Name (optional)">
   <br>
-  <button onclick="uploadSkin()">Hochladen</button>
+  <button id="uploadBtn">Upload</button>
+
+  <div id="status"></div>
 </div>
 
 <div id="gallery"></div>
 
+<footer>
+Fan‑Projekt · Keine Verbindung zu Mojang oder Microsoft
+</footer>
+
 <script>
 const supabaseUrl = "https://iomomoktrjlhqoeoavkb.supabase.co";
 const supabaseKey = "sb_publishable_q1BzzFtE0bFieXJtPD6Sng_lZQXC740";
-const bucketName = "skins";
+const bucket = "skins";
 
 const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
 const dropzone = document.getElementById("dropzone");
 const fileInput = document.getElementById("fileInput");
+const dropText = document.getElementById("dropText");
+const success = document.getElementById("success");
+const fileNameText = document.getElementById("fileName");
+const status = document.getElementById("status");
+const uploadBtn = document.getElementById("uploadBtn");
 
-dropzone.addEventListener("click", () => fileInput.click());
+let selectedFile = null;
+
+dropzone.onclick = () => fileInput.click();
 
 dropzone.addEventListener("dragover", e => {
   e.preventDefault();
@@ -88,40 +242,58 @@ dropzone.addEventListener("dragleave", () => {
 dropzone.addEventListener("drop", e => {
   e.preventDefault();
   dropzone.classList.remove("dragover");
-  fileInput.files = e.dataTransfer.files;
+  setFile(e.dataTransfer.files[0]);
 });
 
-async function uploadSkin() {
-  const file = fileInput.files[0];
-  const name = document.getElementById("nameInput").value || file?.name;
+fileInput.addEventListener("change", e => {
+  setFile(e.target.files[0]);
+});
 
-  if (!file) {
+function setFile(file) {
+  if (!file) return;
+  selectedFile = file;
+  dropText.style.display = "none";
+  success.style.display = "block";
+  fileNameText.textContent = file.name;
+}
+
+uploadBtn.onclick = async () => {
+  if (!selectedFile) {
     alert("Keine Datei ausgewählt");
     return;
   }
 
-  const filePath = `${Date.now()}_${name}.png`;
+  status.textContent = "⬆️ Upload läuft...";
+
+  const nameInput = document.getElementById("nameInput").value;
+  const fileName = `${Date.now()}_${nameInput || selectedFile.name}`;
 
   const { error } = await supabase
     .storage
-    .from(bucketName)
-    .upload(filePath, file);
+    .from(bucket)
+    .upload(fileName, selectedFile);
 
   if (error) {
-    alert("Upload-Fehler: " + error.message);
+    status.textContent = "❌ Fehler: " + error.message;
     return;
   }
 
-  fileInput.value = "";
-  document.getElementById("nameInput").value = "";
+  status.textContent = "✅ Upload erfolgreich!";
+  resetUpload();
+  loadGallery();
+};
 
-  loadSkins();
+function resetUpload() {
+  selectedFile = null;
+  fileInput.value = "";
+  dropText.style.display = "block";
+  success.style.display = "none";
 }
 
-async function loadSkins() {
+async function loadGallery() {
   const { data, error } = await supabase
     .storage
-    .from(bucketName)
+    .from(bucket)
     .list();
 
   if (error) return;
@@ -132,7 +304,7 @@ async function loadSkins() {
   data.forEach(file => {
     const url = supabase
       .storage
-      .from(bucketName)
+      .from(bucket)
       .getPublicUrl(file.name).data.publicUrl;
 
     gallery.innerHTML += `
@@ -145,7 +317,7 @@ async function loadSkins() {
   });
 }
 
-loadSkins();
+loadGallery();
 </script>
 
 </body>
