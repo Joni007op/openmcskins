@@ -4,129 +4,53 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OpenMC-Skins</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-/* Grunddesign */
 body {
     margin: 0;
-    font-family: 'Arial', sans-serif;
-    background: #121212;
+    font-family: Arial, sans-serif;
+    background-color: #121212;
     color: #fff;
     display: flex;
     flex-direction: column;
     align-items: center;
 }
-
-/* Header */
 header {
     width: 100%;
-    padding: 25px 0;
+    padding: 20px 0;
     text-align: center;
-    font-size: 2.2em;
+    font-size: 2em;
     font-weight: bold;
     background: linear-gradient(90deg, #0ff, #f0f);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
 }
-
-/* Container */
 .container {
+    max-width: 600px;
     width: 95%;
-    max-width: 1000px;
-    margin-top: 20px;
-}
-
-/* Drag & Drop */
-#dropzone {
-    border: 3px dashed #555;
-    border-radius: 12px;
-    padding: 50px;
+    margin-top: 30px;
     text-align: center;
-    background-color: #1a1a1a;
+}
+#dropzone {
+    border: 2px dashed #555;
+    border-radius: 10px;
+    padding: 40px;
+    background-color: #2a2a2a;
     cursor: pointer;
     transition: 0.2s all;
-    position: relative;
+    margin-bottom: 15px;
 }
 #dropzone.dragover {
-    background-color: #333;
+    background-color: #444;
     border-color: #0ff;
 }
 #dropzone p {
+    margin: 0;
     font-weight: bold;
     color: #ccc;
 }
-#dropzone .file-info {
-    margin-top: 15px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-#dropzone .file-info span {
+.file-info {
+    margin-top: 10px;
+    display: none;
+    font-weight: bold;
     color: #0ff;
-    font-weight: bold;
-    margin-top: 5px;
-}
-
-/* Upload Row */
-.upload-row {
-    display: flex;
-    gap: 10px;
-    margin-top: 15px;
-    justify-content: center;
-}
-.upload-row input[type="text"] {
-    padding: 10px;
-    border-radius: 6px;
-    border: none;
-    width: 200px;
-}
-.upload-row button {
-    padding: 10px 20px;
-    font-weight: bold;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-    background: linear-gradient(90deg, #0ff, #f0f);
-    color: #121212;
-    transition: 0.1s transform;
-}
-.upload-row button:hover {
-    transform: scale(1.05);
-}
-
-/* Galerie */
-.gallery {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 15px;
-    margin-top: 30px;
-}
-.skin-card {
-    background: #1f1f1f;
-    padding: 10px;
-    border-radius: 10px;
-    text-align: center;
-}
-.skin-card img {
-    width: 100px;
-    height: 100px;
-    image-rendering: pixelated;
-    border-radius: 5px;
-}
-.skin-card a {
-    display: inline-block;
-    margin-top: 5px;
-    padding: 5px 10px;
-    background-color: #0ff;
-    color: #121212;
-    font-weight: bold;
-    border-radius: 5px;
-    text-decoration: none;
-}
-footer {
-    text-align: center;
-    margin: 40px 0 20px;
-    font-size: 0.8em;
-    color: #888;
 }
 </style>
 </head>
@@ -136,55 +60,35 @@ footer {
 
 <div class="container">
     <div id="dropzone">
-        <p>Datei hier reinziehen oder klicken</p>
-        <input type="file" id="fileInput" accept="image/png" hidden>
-        <div class="file-info" id="fileInfo" style="display:none;">
-            ✅ <span id="fileName"></span>
-        </div>
+        <p>Drag & Drop oder klicken</p>
+        <input type="file" id="fileInput" accept=".png" style="display:none;">
     </div>
-
-    <div class="upload-row">
-        <input type="text" id="nameInput" placeholder="Skin-Name">
-        <button onclick="uploadSkin()">Upload</button>
+    <div class="file-info" id="fileInfo">
+        ✅ <span id="fileName"></span>
     </div>
-
-    <div class="gallery" id="gallery"></div>
 </div>
 
-<footer>
-Diese Seite ist ein Fan-Projekt und steht in keiner offiziellen Verbindung zu Mojang/Microsoft.<br>
-Minecraft und Skins sind geistiges Eigentum von Mojang/Microsoft.
-</footer>
-
 <script>
-// Supabase
-const supabaseUrl = "https://iomomoktrjlhqoeoavkb.supabase.co";
-const supabaseKey = "sb_publishable_q1BzzFtE0bFieXJtPD6Sng_lZQXC740";
-const bucketName = "skins";
-const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const fileInfo = document.getElementById('fileInfo');
+const fileNameSpan = document.getElementById('fileName');
 
-// Elemente
-const dropzone = document.getElementById("dropzone");
-const fileInput = document.getElementById("fileInput");
-const fileInfo = document.getElementById("fileInfo");
-const fileNameSpan = document.getElementById("fileName");
+// Klick öffnet Datei-Auswahl
+dropzone.addEventListener('click', () => fileInput.click());
 
 // Drag & Drop
-dropzone.addEventListener("click", () => fileInput.click());
-
-dropzone.addEventListener("dragover", e => {
+dropzone.addEventListener('dragover', e => {
     e.preventDefault();
-    dropzone.classList.add("dragover");
+    dropzone.classList.add('dragover');
 });
-
-dropzone.addEventListener("dragleave", e => {
+dropzone.addEventListener('dragleave', e => {
     e.preventDefault();
-    dropzone.classList.remove("dragover");
+    dropzone.classList.remove('dragover');
 });
-
-dropzone.addEventListener("drop", e => {
+dropzone.addEventListener('drop', e => {
     e.preventDefault();
-    dropzone.classList.remove("dragover");
+    dropzone.classList.remove('dragover');
     const file = e.dataTransfer.files[0];
     if(file) {
         fileInput.files = e.dataTransfer.files;
@@ -192,57 +96,16 @@ dropzone.addEventListener("drop", e => {
     }
 });
 
-fileInput.addEventListener("change", () => {
+// Datei-Auswahl über Klick
+fileInput.addEventListener('change', () => {
     const file = fileInput.files[0];
     if(file) showFileInfo(file);
 });
 
-function showFileInfo(file){
-    fileInfo.style.display = "flex";
+function showFileInfo(file) {
+    fileInfo.style.display = 'block';
     fileNameSpan.textContent = file.name;
 }
-
-// Upload
-async function uploadSkin(){
-    const file = fileInput.files[0];
-    const name = document.getElementById("nameInput").value.trim() || (file ? file.name : '');
-    if(!file) return alert("Keine Datei ausgewählt");
-    if(!name) return alert("Gib einen Namen ein");
-
-    const filePath = `${Date.now()}_${name}.png`;
-    const { error } = await supabase.storage.from(bucketName).upload(filePath, file);
-    if(error){
-        alert("Upload fehlgeschlagen: "+error.message);
-        return;
-    }
-
-    // Reset
-    fileInput.value = "";
-    fileInfo.style.display = "none";
-    document.getElementById("nameInput").value = "";
-
-    loadGallery();
-}
-
-// Galerie laden
-async function loadGallery(){
-    const { data, error } = await supabase.storage.from(bucketName).list();
-    if(error) return console.log(error);
-
-    const gallery = document.getElementById("gallery");
-    gallery.innerHTML = "";
-
-    data.forEach(file => {
-        const url = supabase.storage.from(bucketName).getPublicUrl(file.name).data.publicUrl;
-        const card = document.createElement("div");
-        card.className = "skin-card";
-        card.innerHTML = `<img src="${url}"><br>${file.name}<br><a href="${url}" download>Download</a>`;
-        gallery.appendChild(card);
-    });
-}
-
-// Galerie direkt laden
-loadGallery();
 </script>
 
 </body>
